@@ -1,27 +1,45 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+<<<<<<< HEAD
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
+=======
+  "type": "commonjs",
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88
     "build": "tsc",
     "start": "node dist/index.js",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate"
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts",
+<<<<<<< HEAD
+    "seed:db": "tsx src/db/seed.ts",
+    "seed:db:local": "cross-env DYNAMODB_ENDPOINT=http://localhost:8000 tsx src/db/seed.ts",
+=======
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88
+    "prepare": "husky"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -30,9 +48,26 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.0.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+<<<<<<< HEAD
+    "cross-env": "^10.1.0",
+=======
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
     "nodemon": "^3.1.14",
-    "prisma": "^7.8.0",
+    "prettier": "^3.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+<<<<<<< HEAD
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3"
   }
 }
+=======
+    "typescript": "^5.0.0"
+  }
+}
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88

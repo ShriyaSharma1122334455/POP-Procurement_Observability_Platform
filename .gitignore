@@ -1,3 +1,29 @@
+<<<<<<< HEAD
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+
+# ── Environment ───────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Terraform ─────────────────────────────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+# Keep the example file and the lock file (reproducible provider versions)
+!*.tfvars.example
+# Uncomment the next line if you want to ignore the lock file too:
+# .terraform.lock.hcl
+
+# ── OS / Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+=======
 node_modules
 dist
 .env
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88

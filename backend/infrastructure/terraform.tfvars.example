@@ -1,0 +1,5 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# DO NOT commit terraform.tfvars to source control.
+
+aws_region  = "us-east-1"
+environment = "dev"   # dev | staging | prod

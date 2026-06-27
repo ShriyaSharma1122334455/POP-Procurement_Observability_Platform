@@ -1,11 +1,10 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
-<<<<<<< HEAD
 import logger from './utils/logger.js'
-=======
-import logger from './utils/logger'
->>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88
+import authRoutes from './routes/auth.routes.js'
+import spendRoutes from './routes/spend.routes.js'
+import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
 
@@ -13,22 +12,27 @@ app.use(helmet())
 app.use(cors())
 app.use(express.json())
 
+// ── Request logging ────────────────────────────────────────────────────────
 app.use((req, _res, next) => {
     logger.info({ method: req.method, url: req.url }, 'incoming request')
     next()
 })
 
+// ── Health check ───────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// ── Feature routes ─────────────────────────────────────────────────────────
+app.use('/auth', authRoutes)
+app.use('/spend', spendRoutes)
+
+// ── 404 catch-all ──────────────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ error: 'Route not found' })
 })
 
-app.use((err: Error, _req: express.Request, res: express.Response) => {
-    logger.error({ err }, err.message)
-    res.status(500).json({ error: 'Internal server error' })
-})
+// ── Global error handler (must be last) ───────────────────────────────────
+app.use(errorHandler)
 
 export default app

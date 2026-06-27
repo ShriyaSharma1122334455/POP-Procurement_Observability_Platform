@@ -1,0 +1,65 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Build, Push, and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Image to ECR
+        run: |
+          docker build -t ${{ secrets.ECR_URL }}:latest -t ${{ secrets.ECR_URL }}:${{ github.sha }} ./backend
+          docker push ${{ secrets.ECR_URL }}:latest
+          docker push ${{ secrets.ECR_URL }}:${{ github.sha }}
+
+      - name: Deploy to Amazon ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --service ${{ secrets.ECS_SERVICE_NAME }} \
+            --force-new-deployment \
+            --region us-east-1
+
+      - name: Slack Notification on Success
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_TITLE: "Deployment Succeeded 🚀"
+          SLACK_MESSAGE: "Successfully built and deployed backend to ECS Fargate (Service: ${{ secrets.ECS_SERVICE_NAME }})."
+          SLACK_COLOR: "#36a64f"
+
+      - name: Slack Notification on Failure
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_TITLE: "Deployment Failed ❌"
+          SLACK_MESSAGE: "Backend deployment to ECS Fargate failed. Please check the Actions run logs."
+          SLACK_COLOR: "#FF0000"

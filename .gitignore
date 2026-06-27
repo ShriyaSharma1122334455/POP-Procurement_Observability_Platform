@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ── Node ──────────────────────────────────────────────────────────────────────
 node_modules/
 dist/
@@ -21,3 +22,8 @@ dist/
 .DS_Store
 Thumbs.db
 *.swp
+=======
+node_modules
+dist
+.env
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88

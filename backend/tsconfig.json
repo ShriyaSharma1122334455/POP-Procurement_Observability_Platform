@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+<<<<<<< HEAD
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+=======
+    "module": "commonjs",
+    "moduleResolution": "node",
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88
     "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,

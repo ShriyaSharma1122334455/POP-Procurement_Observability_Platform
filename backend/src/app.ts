@@ -1,7 +1,11 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+<<<<<<< HEAD
 import logger from './utils/logger.js'
+=======
+import logger from './utils/logger'
+>>>>>>> e7edd36ba28bd15e419092aff086f035d210fd88
 
 const app = express()
 

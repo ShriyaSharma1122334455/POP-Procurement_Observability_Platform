@@ -26,4 +26,8 @@ export const env = {
   // Table names
   DYNAMODB_USERS_TABLE:
     process.env['DYNAMODB_USERS_TABLE'] ?? 'pop-dev-users',
+  DYNAMODB_PURCHASE_ORDERS_TABLE:
+    process.env['DYNAMODB_PURCHASE_ORDERS_TABLE'] ?? 'pop-dev-purchase-orders',
+  DYNAMODB_SUPPLIERS_TABLE:
+    process.env['DYNAMODB_SUPPLIERS_TABLE'] ?? 'pop-dev-suppliers',
 } as const

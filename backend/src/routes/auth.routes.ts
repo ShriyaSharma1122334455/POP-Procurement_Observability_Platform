@@ -17,4 +17,4 @@ router.post('/register', registerHandler)
 router.post('/login', loginHandler)
 router.get('/profile', authenticate, profileHandler)
 
-export default routerz  
+export default router

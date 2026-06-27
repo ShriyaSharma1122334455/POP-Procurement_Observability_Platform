@@ -3,6 +3,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import logger from './utils/logger.js'
 import authRoutes from './routes/auth.routes.js'
+import spendRoutes from './routes/spend.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
@@ -24,6 +25,7 @@ app.get('/health', (_req, res) => {
 
 // ── Feature routes ─────────────────────────────────────────────────────────
 app.use('/auth', authRoutes)
+app.use('/spend', spendRoutes)
 
 // ── 404 catch-all ──────────────────────────────────────────────────────────
 app.use((_req, res) => {

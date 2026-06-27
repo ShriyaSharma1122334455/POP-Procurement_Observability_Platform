@@ -30,4 +30,6 @@ export const env = {
     process.env['DYNAMODB_PURCHASE_ORDERS_TABLE'] ?? 'pop-dev-purchase-orders',
   DYNAMODB_SUPPLIERS_TABLE:
     process.env['DYNAMODB_SUPPLIERS_TABLE'] ?? 'pop-dev-suppliers',
+  DYNAMODB_ALERTS_TABLE:
+    process.env['DYNAMODB_ALERTS_TABLE'] ?? 'pop-dev-alerts',
 } as const

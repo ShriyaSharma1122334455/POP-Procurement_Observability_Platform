@@ -6,6 +6,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { z, ZodError } from 'zod'
 import * as supplierService from '../services/supplier.service.js'
+import * as aiService from '../services/ai.service.js'
 import type { SupplierCategory } from '../db/types.js'
 
 const listSuppliersQuerySchema = z.object({
@@ -74,6 +75,30 @@ export async function getSupplierByIdHandler(
     }
 
     res.status(200).json({ supplier })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
+  }
+}
+
+const getSupplierSummaryParamsSchema = z.object({
+  id: z.string().min(1, 'Supplier ID is required'),
+})
+
+export async function getSupplierSummaryHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const params = getSupplierSummaryParamsSchema.parse(req.params)
+    const organizationId = req.user!.organizationId
+
+    const summary = await aiService.getSupplierSummary(params.id, organizationId)
+    res.status(200).json({ summary })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })

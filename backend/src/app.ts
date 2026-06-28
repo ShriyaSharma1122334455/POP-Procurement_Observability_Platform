@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes.js'
 import spendRoutes from './routes/spend.routes.js'
 import supplierRoutes from './routes/supplier.routes.js'
 import alertRoutes from './routes/alert.routes.js'
+import aiRoutes from './routes/ai.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
@@ -30,6 +31,7 @@ app.use('/auth', authRoutes)
 app.use('/spend', spendRoutes)
 app.use('/suppliers', supplierRoutes)
 app.use('/alerts', alertRoutes)
+app.use('/ai', aiRoutes)
 
 // ── 404 catch-all ──────────────────────────────────────────────────────────
 app.use((_req, res) => {

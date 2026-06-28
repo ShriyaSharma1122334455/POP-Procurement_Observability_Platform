@@ -1,9 +1,9 @@
 """Tests for Y4 — Risk Analysis Engine."""
 
+import asyncio
 import json
 
 import pytest
-from moto import mock_aws
 
 from app.config.settings import Settings
 from app.engines.risk_engine import RiskEngine
@@ -23,7 +23,6 @@ RISK_RESPONSE = json.dumps({
 })
 
 
-@mock_aws
 def test_explain_alert_success(dynamo_tables, mock_claude, sample_alert, sample_supplier):
     dynamo_tables.Table("pop-dev-alerts").put_item(Item=sample_alert)
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
@@ -33,10 +32,7 @@ def test_explain_alert_success(dynamo_tables, mock_claude, sample_alert, sample_
     settings = Settings()
     engine = RiskEngine(dynamo_tables, mock_claude, settings)
 
-    import asyncio
-    result = asyncio.get_event_loop().run_until_complete(
-        engine.explain_alert("alert-001", "org-001")
-    )
+    result = asyncio.run(engine.explain_alert("alert-001", "org-001"))
 
     assert result["alertId"] == "alert-001"
     assert result["alertType"] == "PRICE_SPIKE"
@@ -46,14 +42,10 @@ def test_explain_alert_success(dynamo_tables, mock_claude, sample_alert, sample_
     mock_claude.complete.assert_called_once()
 
 
-@mock_aws
 def test_explain_alert_not_found(dynamo_tables, mock_claude):
     settings = Settings()
     engine = RiskEngine(dynamo_tables, mock_claude, settings)
 
-    import asyncio
     with pytest.raises(AppError) as exc:
-        asyncio.get_event_loop().run_until_complete(
-            engine.explain_alert("nonexistent", "org-001")
-        )
+        asyncio.run(engine.explain_alert("nonexistent", "org-001"))
     assert exc.value.status_code == 404

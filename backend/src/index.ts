@@ -1,10 +1,10 @@
-import dotenv from 'dotenv'
-dotenv.config()
+// Load env vars FIRST — before any other import evaluates config/env.ts
+import 'dotenv/config'
 
-import app from './app.ts'
+import app from './app.js'
+import logger from './utils/logger.js'
+import { env } from './config/env.js'
 
-const PORT = process.env.PORT || 3000
-
-app.listen(PORT, () => {
-    console.log(`POP backend running on port ${PORT}`)
+app.listen(env.PORT, () => {
+    logger.info(`POP backend running on port ${env.PORT} [${env.NODE_ENV}]`)
 })

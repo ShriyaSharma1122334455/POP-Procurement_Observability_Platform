@@ -1,33 +1,15 @@
 {
   "compilerOptions": {
-    // File Layout
-    "rootDir": "./src",
-    "outDir": "./dist",
-    // Module System (Modern Node.js + ESM)
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "ES2022",
-    // For Node.js types
-    "types": [
-      "node"
-    ],
-    // Output
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-    // Strictness
+    "rootDir": "./src",
+    "outDir": "./dist",
     "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "skipLibCheck": true,
-    // Other
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": false
   },
   "include": [
     "src/**/*"

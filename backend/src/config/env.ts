@@ -32,4 +32,9 @@ export const env = {
     process.env['DYNAMODB_SUPPLIERS_TABLE'] ?? 'pop-dev-suppliers',
   DYNAMODB_ALERTS_TABLE:
     process.env['DYNAMODB_ALERTS_TABLE'] ?? 'pop-dev-alerts',
+  DYNAMODB_SAVINGS_RECOMMENDATIONS_TABLE:
+    process.env['DYNAMODB_SAVINGS_RECOMMENDATIONS_TABLE'] ?? 'pop-dev-savings-recommendations',
+
+  // AI Services
+  AI_SERVICE_URL: process.env['AI_SERVICE_URL'] ?? 'http://localhost:8000',
 } as const

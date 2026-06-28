@@ -6,6 +6,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { z, ZodError } from 'zod'
 import * as alertService from '../services/alert.service.js'
+import * as aiService from '../services/ai.service.js'
 import type { AlertStatus, AlertSeverity, AlertType } from '../db/types.js'
 
 const listAlertsQuerySchema = z.object({
@@ -81,6 +82,30 @@ export async function createAlertHandler(
       message: 'Alert created successfully',
       alert,
     })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
+  }
+}
+
+const explainAlertParamsSchema = z.object({
+  id: z.string().min(1, 'Alert ID is required'),
+})
+
+export async function explainAlertHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const params = explainAlertParamsSchema.parse(req.params)
+    const organizationId = req.user!.organizationId
+
+    const explanation = await aiService.explainAlert(params.id, organizationId)
+    res.status(200).json({ explanation })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })

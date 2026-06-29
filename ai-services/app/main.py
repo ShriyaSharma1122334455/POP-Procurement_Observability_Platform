@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.clients.gemini import GeminiClient
+from app.clients.nvidia import NvidiaClient
 from app.clients.dynamo import get_dynamo_resource
 from app.config.secrets import load_secrets
 from app.config.settings import settings
@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 
     app.state.settings = settings
     app.state.dynamo = get_dynamo_resource(settings)
-    app.state.gemini = GeminiClient(settings.GEMINI_API_KEY)
+    app.state.nvidia = NvidiaClient(settings.NVIDIA_API_KEY)
 
     logger.info(
         "POP AI Services started | env=%s region=%s",
@@ -46,6 +46,8 @@ app = FastAPI(
     description="AI-powered procurement intelligence — supplier scoring, savings agent, risk analysis",
     version="1.0.0",
     lifespan=lifespan,
+    # Allow large base64-encoded images from multi-page scanned PDFs
+    max_request_body_size=30 * 1024 * 1024,  # 30 MB
 )
 
 app.add_middleware(

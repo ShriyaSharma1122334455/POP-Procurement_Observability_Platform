@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
-import { cn, getScoreColor } from '@/lib/utils'
+import { cn, getScoreColor, formatCategory } from '@/lib/utils'
 import { RecommendationBadge } from './RecommendationBadge'
 import type { Supplier } from '@/types'
 
@@ -67,7 +67,7 @@ export function SupplierCard({ supplier }: SupplierCardProps) {
               {supplier.name}
             </p>
             <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 mt-0.5">
-              {supplier.category}
+              {formatCategory(supplier.category)}
             </span>
           </div>
         </div>

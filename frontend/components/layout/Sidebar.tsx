@@ -11,26 +11,36 @@ import {
   Diamond,
   type LucideIcon,
 } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/hooks/useAuth"
+import * as alertsApi from "@/lib/api/alerts"
 
 type NavItem = {
   label: string
   href: string
   icon: LucideIcon
-  badgeCount?: number
+  badge?: number
 }
 
-const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS: Omit<NavItem, "badge">[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Suppliers", href: "/suppliers", icon: Building2 },
-  { label: "Alerts", href: "/alerts", icon: Bell, badgeCount: 12 },
+  { label: "Alerts", href: "/alerts", icon: Bell },
   { label: "Savings Agent", href: "/agent", icon: Sparkles },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+
+  const { data: alertsData } = useQuery({
+    queryKey: ["alerts", "open-count"],
+    queryFn: () => alertsApi.list({ status: "OPEN" }),
+    staleTime: 60_000,
+    retry: 1,
+  })
+  const openAlertCount = alertsData?.total ?? 0
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -59,8 +69,9 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        {NAV_ITEMS.map(({ label, href, icon: Icon, badgeCount }) => {
+        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(`${href}/`)
+          const badge = label === "Alerts" ? openAlertCount : 0
           return (
             <Link
               key={href}
@@ -75,12 +86,12 @@ export function Sidebar() {
             >
               <Icon className="size-4 shrink-0" aria-hidden />
               <span className="flex-1 truncate">{label}</span>
-              {badgeCount !== undefined && badgeCount > 0 && (
+              {badge > 0 && (
                 <span
                   className="text-[10px] font-semibold bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"
-                  aria-label={`${badgeCount} open alerts`}
+                  aria-label={`${badge} open alerts`}
                 >
-                  {badgeCount}
+                  {badge}
                 </span>
               )}
             </Link>

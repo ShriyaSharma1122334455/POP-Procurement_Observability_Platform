@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
-import { getById, getSpend } from '@/lib/api/suppliers'
+import { getById, getSpend, getSummary, type SupplierSummary } from '@/lib/api/suppliers'
 import { MOCK_SUPPLIERS, generateDailyTrends } from '@/lib/mockData'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { SupplierProfile } from '@/components/suppliers/SupplierProfile'
@@ -36,6 +36,20 @@ export default function SupplierDetailPage() {
       }
     },
     enabled: id !== '',
+  })
+
+  const { data: aiSummary } = useQuery<SupplierSummary | null>({
+    queryKey: ['supplier-summary', id],
+    queryFn: async () => {
+      try {
+        return await getSummary(id)
+      } catch {
+        return null
+      }
+    },
+    enabled: id !== '',
+    staleTime: 5 * 60_000,
+    retry: 0,
   })
 
   const isLoading = supplierPending || spendPending
@@ -86,6 +100,7 @@ export default function SupplierDetailPage() {
       <SupplierProfile
         supplier={supplier}
         spendHistory={spendData ?? []}
+        aiSummary={aiSummary ?? null}
       />
     </div>
   )

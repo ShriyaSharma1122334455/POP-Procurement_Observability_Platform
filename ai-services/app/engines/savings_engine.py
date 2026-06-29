@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from app.clients.gemini import GeminiClient
+from app.clients.nvidia import NvidiaClient
 from app.config.settings import Settings
 from app.prompts import savings_prompts
 from app.repositories import savings_repo, supplier_repo
@@ -102,9 +102,9 @@ def _build_recommendation_item(opp: dict, organization_id: str) -> dict:
 
 
 class SavingsEngine:
-    def __init__(self, dynamo: Any, gemini: GeminiClient, settings: Settings) -> None:
+    def __init__(self, dynamo: Any, nvidia: NvidiaClient, settings: Settings) -> None:
         self._dynamo = dynamo
-        self._gemini = gemini
+        self._gemini = nvidia
         self._settings = settings
 
     async def run_agent(self, prompt: str, organization_id: str) -> dict:

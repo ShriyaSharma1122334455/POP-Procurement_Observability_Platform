@@ -71,12 +71,13 @@ export function SupplierFilters({
         className={SELECT_CLASS}
       >
         <option value="">All Categories</option>
-        <option value="Proteins">Proteins</option>
-        <option value="Produce">Produce</option>
-        <option value="Dairy">Dairy</option>
-        <option value="Beverages">Beverages</option>
-        <option value="Dry Goods">Dry Goods</option>
-        <option value="Other">Other</option>
+        <option value="FOOD_BEVERAGE">Food &amp; Beverage</option>
+        <option value="RAW_MATERIALS">Raw Materials</option>
+        <option value="LOGISTICS">Logistics</option>
+        <option value="TECHNOLOGY">Technology</option>
+        <option value="PROFESSIONAL_SERVICES">Professional Services</option>
+        <option value="UTILITIES">Utilities</option>
+        <option value="OTHER">Other</option>
       </select>
 
       {/* Recommendation */}

@@ -47,6 +47,20 @@ export function getScoreColor(score: number): string {
   return "text-red-600"
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  FOOD_BEVERAGE:         'Food & Beverage',
+  RAW_MATERIALS:         'Raw Materials',
+  LOGISTICS:             'Logistics',
+  TECHNOLOGY:            'Technology',
+  PROFESSIONAL_SERVICES: 'Professional Services',
+  UTILITIES:             'Utilities',
+  OTHER:                 'Other',
+}
+
+export function formatCategory(category: string): string {
+  return CATEGORY_LABELS[category?.toUpperCase()] ?? category
+}
+
 export function getRecommendationColor(rec: SupplierRecommendation): string {
   switch (rec) {
     case "RENEW":

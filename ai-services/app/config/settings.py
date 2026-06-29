@@ -31,10 +31,10 @@ class Settings(BaseSettings):
     DYNAMODB_SAVINGS_RECOMMENDATIONS_TABLE: str = "pop-dev-savings-recommendations"
 
     # Secrets Manager secret names (production only)
-    GEMINI_SECRET_NAME: str = "pop/gemini-api-key"
+    NVIDIA_SECRET_NAME: str = "pop/nvidia-api-key"
 
     # API keys — set directly in dev; loaded from Secrets Manager in prod
-    GEMINI_API_KEY: str = ""
+    NVIDIA_API_KEY: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

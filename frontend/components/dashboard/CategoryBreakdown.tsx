@@ -3,7 +3,7 @@
 import { LayoutGrid } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { formatCurrency, cn } from '@/lib/utils'
+import { formatCurrency, formatCategory, cn } from '@/lib/utils'
 import type { CategorySpend } from '@/types'
 
 interface CategoryBreakdownProps {
@@ -97,7 +97,7 @@ export function CategoryBreakdown({ categories }: CategoryBreakdownProps) {
                     style={{ backgroundColor: getColor(i) }}
                   />
                   <span className="flex-1 min-w-0 truncate text-sm text-slate-700">
-                    {cat.category}
+                    {formatCategory(cat.category)}
                   </span>
                   <span className="shrink-0 text-sm font-medium text-slate-900 tabular-nums">
                     {formatCurrency(cat.amount)}

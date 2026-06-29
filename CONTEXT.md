@@ -22,14 +22,18 @@ The platform answers:
 
 | Layer | Technology | Port |
 |---|---|---|
-| Frontend | Next.js 16.2.9 + React 19 + TypeScript + Tailwind v4 + shadcn + Zustand v5 + TanStack Query v5 | 3000 |
-| Backend | Node.js + Express v5 + TypeScript (strict ESM) + AWS SDK v3 | 3001 |
-| AI Services | Python 3.11+ + FastAPI + uvicorn + Google Gemini 2.0 Flash | 8002 |
+| Frontend | Next.js 16.2.9 + React 19 + TypeScript + Tailwind v4 + shadcn + Zustand v5 + TanStack Query v5 + pdf.js | 3000 |
+| Backend | Node.js + Express v5 + TypeScript (strict ESM) + AWS SDK v3 + Zod | 3001 |
+| AI Services | Python 3.11+ + FastAPI + uvicorn + NVIDIA NIM (OpenAI-compatible) | 8002 |
 | Database | AWS DynamoDB — region `us-east-2`, 5 tables, PAY_PER_REQUEST | — |
-| Infra | AWS ECS Fargate + ECR + Secrets Manager + Terraform | — |
+| Infra | AWS ECS Fargate + ECR + Secrets Manager | — |
 | CI/CD | GitHub Actions → ECR → ECS | — |
 
-> The architecture docs and early task files mention PostgreSQL/Prisma — ignore those. DynamoDB is the actual database.
+**AI Models (NVIDIA NIM):**
+- `meta/llama-3.1-8b-instruct` — all text tasks (supplier scorecard, savings agent, risk explanation, PDF text extraction)
+- `meta/llama-3.2-11b-vision-instruct` — vision/multimodal (scanned invoice/image extraction)
+
+> The architecture docs and early task files mention PostgreSQL/Prisma and Google Gemini — ignore those. DynamoDB is the actual database and NVIDIA NIM is the AI provider.
 
 ---
 
@@ -42,11 +46,15 @@ POP-Procurement_Observability_Platform/
 │   ├── app/
 │   │   ├── (auth)/             # login, signup pages
 │   │   └── (dashboard)/        # dashboard, suppliers, alerts, agent pages
-│   ├── components/             # UI components
+│   ├── components/
+│   │   ├── suppliers/          # SupplierProfile, AddSupplierSheet, SupplierFilters
+│   │   ├── agent/              # SavingsAgentChat, SavingsResultsPanel, SavingsOpportunityCard
+│   │   └── layout/             # Sidebar (real alert badge count), topbar
 │   ├── lib/
 │   │   ├── api/                # API clients (spend, suppliers, alerts, agent, auth)
 │   │   ├── stores/             # Zustand auth store
-│   │   └── mockData.ts         # fallback mock data (used only when API fails)
+│   │   ├── pdf-extract.ts      # Client-side PDF → text or stitched JPEG
+│   │   └── utils.ts            # formatCategory() and other helpers
 │   ├── types/index.ts          # shared TypeScript types
 │   └── proxy.ts                # Next.js 16 route protection middleware
 ├── backend/
@@ -61,12 +69,12 @@ POP-Procurement_Observability_Platform/
 │       └── config/             # env.ts, dynamo.ts
 └── ai-services/
     └── app/
-        ├── clients/            # gemini.py, dynamo.py
+        ├── clients/            # nvidia.py (LLM + vision), dynamo.py
         ├── engines/            # savings_engine, supplier_engine, risk_engine
-        ├── prompts/            # prompt templates
-        ├── repositories/       # DynamoDB access layer
+        ├── prompts/            # prompt templates (supplier, savings, risk, extract)
+        ├── repositories/       # DynamoDB read layer
         ├── routers/            # ai.py, health.py
-        ├── schemas/            # Pydantic models
+        ├── schemas/            # Pydantic request/response models
         └── config/             # settings.py, secrets.py
 ```
 
@@ -111,9 +119,12 @@ GET    /api/spend/categories?period=30d
 GET    /api/spend/suppliers?period=30d
 
 GET    /api/suppliers?category=&search=
+POST   /api/suppliers                       # create supplier
 GET    /api/suppliers/:id
 GET    /api/suppliers/:id/spend?period=90d
-GET    /api/suppliers/:id/summary           # AI-generated
+GET    /api/suppliers/:id/summary           # AI-generated scorecard
+POST   /api/suppliers/extract               # vision extraction from image (JPG/PNG/WebP)
+POST   /api/suppliers/extract-text          # text extraction from PDF text
 
 GET    /api/alerts?status=&severity=&type=
 GET    /api/alerts/:id
@@ -133,6 +144,8 @@ GET    /api/agent/history
 POST   /ai/supplier-summary
 POST   /ai/savings-agent
 POST   /ai/risk-explain
+POST   /ai/extract-supplier-doc             # vision extraction (base64 image)
+POST   /ai/extract-supplier-text            # text extraction (raw PDF text)
 GET    /health
 ```
 
@@ -140,7 +153,21 @@ GET    /health
 - `supplierId` → `id`
 - `alertId` → `id`
 - `userId` → `id`
-- `CONTRACT_EXPIRY` (DB) → `CONTRACT_EXPIRATION` (frontend)
+- Savings recommendations: AI returns camelCase (`estimatedAnnualSavings`, `confidenceScore`, `affectedSupplierIds`)
+
+---
+
+# Document Extraction Flow (Add Supplier)
+
+The "Add Supplier" floating button opens a sheet with AI-powered auto-fill:
+
+| Input | Client-side processing | AI path |
+|---|---|---|
+| Digital PDF | pdf.js extracts text from all pages | `POST /ai/extract-supplier-text` → llama-3.1-8b |
+| Scanned PDF | pdf.js renders all pages → stitched JPEG (max 10 pages, scale 1.2, quality 0.82) | `POST /ai/extract-supplier-doc` → llama-3.2-11b-vision |
+| JPG / PNG / WebP | FileReader base64 encode | `POST /ai/extract-supplier-doc` → llama-3.2-11b-vision |
+
+Body size limits: Express `20mb`, FastAPI `30mb`.
 
 ---
 
@@ -164,18 +191,19 @@ AI_SERVICE_URL=http://localhost:8002
 
 **`ai-services/.env`** (gitignored — create manually):
 ```
+AI_SERVICE_PORT=8000
 ENVIRONMENT=development
 AWS_REGION=us-east-2
 AWS_ACCESS_KEY_ID=<your-key>
 AWS_SECRET_ACCESS_KEY=<your-secret>
-GEMINI_API_KEY=<your-gemini-key>
+NVIDIA_API_KEY=<your-nvidia-nim-key>
 DYNAMODB_SUPPLIERS_TABLE=pop-dev-suppliers
 DYNAMODB_PURCHASE_ORDERS_TABLE=pop-dev-purchase-orders
 DYNAMODB_ALERTS_TABLE=pop-dev-alerts
 DYNAMODB_SAVINGS_RECOMMENDATIONS_TABLE=pop-dev-savings-recommendations
 ```
 
-Get a Gemini API key at https://aistudio.google.com/apikey — free tier has a daily limit; enable billing on your Google Cloud project for sustained use.
+Get a free NVIDIA NIM API key at https://build.nvidia.com — free tier includes 40 rpm.
 
 ---
 
@@ -185,7 +213,7 @@ Get a Gemini API key at https://aistudio.google.com/apikey — free tier has a d
 - Node.js 18+
 - Python 3.11+
 - AWS credentials with access to the DynamoDB tables in `us-east-2`
-- Gemini API key
+- NVIDIA NIM API key (free at build.nvidia.com)
 
 ### Step 1 — Install dependencies
 
@@ -202,33 +230,25 @@ Create `backend/.env` and `ai-services/.env` using the templates above.
 ### Step 3 — Seed the database (first time only)
 
 ```bash
-cd backend
-npx tsx src/db/seed.ts
+cd backend && npx tsx src/db/seed.ts
 ```
 
-This writes 25 records across all 5 tables (5 users, 5 suppliers, 5 purchase orders, 5 alerts, 5 savings recommendations) all scoped to `organizationId: "default"`.
+Writes 5 suppliers, purchase orders, alerts, and savings recommendations scoped to `organizationId: "default"`.
 
 ### Step 4 — Start all three services
 
-**Terminal 1 — Backend**
 ```bash
-cd backend
-npm run dev
-```
+# Terminal 1 — Backend
+cd backend && npm run dev
 
-**Terminal 2 — AI Services**
-```bash
-cd ai-services
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8002 --reload
+# Terminal 2 — AI Services
+cd ai-services && python -m uvicorn app.main:app --host 127.0.0.1 --port 8002 --reload
+
+# Terminal 3 — Frontend
+cd frontend && npm run dev
 ```
 
 > On Windows, port 8001 may be blocked by firewall. Use 8002 and set `AI_SERVICE_URL=http://localhost:8002` in `backend/.env`.
-
-**Terminal 3 — Frontend**
-```bash
-cd frontend
-npm run dev
-```
 
 ### Step 5 — Open the app
 
@@ -246,6 +266,9 @@ Go to http://localhost:3000 and register a new account.
 - **DynamoDB from Python:** use `Decimal` not `float` when writing numeric values.
 - **Next.js 16 middleware:** file must be named `proxy.ts` and export `function proxy(...)` — not `middleware.ts`.
 - **Alert updates:** use the `organizationId-createdAt-index` GSI to look up the full key (`alertId` + `createdAt`) before calling `UpdateCommand`. Base table queries with `FilterExpression` + `Limit` drop results silently.
+- **Express body limit:** set to `20mb` to handle base64-encoded images from document extraction.
+- **Savings agent response shape:** AI returns camelCase field names (`estimatedAnnualSavings`, not `estimated_annual_savings`). The backend `transformSavingsResponse` in `ai.controller.ts` maps these to the frontend `AgentResponse` type.
+- **PDF extraction strategy:** try text first (all pages); fall back to stitched JPEG only for scanned/image-only PDFs.
 
 ---
 

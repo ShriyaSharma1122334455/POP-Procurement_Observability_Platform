@@ -1,9 +1,9 @@
 """Tests for Y3 — Savings Agent Engine."""
 
+import asyncio
 import json
 
 import pytest
-from moto import mock_aws
 
 from app.config.settings import Settings
 from app.engines.savings_engine import SavingsEngine
@@ -28,21 +28,17 @@ SAVINGS_RESPONSE = json.dumps({
 })
 
 
-@mock_aws
-def test_run_agent_success(dynamo_tables, mock_claude, sample_supplier, sample_orders):
+def test_run_agent_success(dynamo_tables, mock_ai, sample_supplier, sample_orders):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
     for order in sample_orders:
         dynamo_tables.Table("pop-dev-purchase-orders").put_item(Item=order)
 
-    mock_claude.complete.return_value = SAVINGS_RESPONSE
+    mock_ai.complete.return_value = SAVINGS_RESPONSE
 
     settings = Settings()
-    engine = SavingsEngine(dynamo_tables, mock_claude, settings)
+    engine = SavingsEngine(dynamo_tables, mock_ai, settings)
 
-    import asyncio
-    result = asyncio.get_event_loop().run_until_complete(
-        engine.run_agent("reduce food cost by 5%", "org-001")
-    )
+    result = asyncio.run(engine.run_agent("reduce food cost by 5%", "org-001"))
 
     assert result["opportunities_created"] == 1
     assert "analysis_summary" in result
@@ -55,16 +51,12 @@ def test_run_agent_success(dynamo_tables, mock_claude, sample_supplier, sample_o
     assert recs[0]["category"] == "VOLUME_DISCOUNT"
 
 
-@mock_aws
-def test_run_agent_no_orders_raises(dynamo_tables, mock_claude, sample_supplier):
+def test_run_agent_no_orders_raises(dynamo_tables, mock_ai, sample_supplier):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
 
     settings = Settings()
-    engine = SavingsEngine(dynamo_tables, mock_claude, settings)
+    engine = SavingsEngine(dynamo_tables, mock_ai, settings)
 
-    import asyncio
     with pytest.raises(AppError) as exc:
-        asyncio.get_event_loop().run_until_complete(
-            engine.run_agent("reduce costs", "org-001")
-        )
+        asyncio.run(engine.run_agent("reduce costs", "org-001"))
     assert exc.value.status_code == 422

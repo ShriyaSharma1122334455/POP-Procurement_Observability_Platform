@@ -1,9 +1,9 @@
 """Tests for Y2 — Supplier Intelligence Engine."""
 
+import asyncio
 import json
 
 import pytest
-from moto import mock_aws
 
 from app.config.settings import Settings
 from app.engines.supplier_engine import SupplierEngine
@@ -26,53 +26,40 @@ SCORECARD_RESPONSE = json.dumps({
 })
 
 
-@mock_aws
-def test_generate_scorecard_success(dynamo_tables, mock_claude, sample_supplier, sample_orders):
-    # Seed DynamoDB
+def test_generate_scorecard_success(dynamo_tables, mock_ai, sample_supplier, sample_orders):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
     for order in sample_orders:
         dynamo_tables.Table("pop-dev-purchase-orders").put_item(Item=order)
 
-    mock_claude.complete.return_value = SCORECARD_RESPONSE
+    mock_ai.complete.return_value = SCORECARD_RESPONSE
 
     settings = Settings()
-    engine = SupplierEngine(dynamo_tables, mock_claude, settings)
+    engine = SupplierEngine(dynamo_tables, mock_ai, settings)
 
-    import asyncio
-    result = asyncio.get_event_loop().run_until_complete(
-        engine.generate_scorecard("supplier-001", "org-001")
-    )
+    result = asyncio.run(engine.generate_scorecard("supplier-001", "org-001"))
 
     assert result["supplierId"] == "supplier-001"
     assert result["recommendation"] == "RENEW"
     assert "generatedAt" in result
     assert result["spendContext"]["order_count"] == 5
-    mock_claude.complete.assert_called_once()
+    mock_ai.complete.assert_called_once()
 
 
-@mock_aws
-def test_generate_scorecard_not_found(dynamo_tables, mock_claude):
+def test_generate_scorecard_not_found(dynamo_tables, mock_ai):
     settings = Settings()
-    engine = SupplierEngine(dynamo_tables, mock_claude, settings)
+    engine = SupplierEngine(dynamo_tables, mock_ai, settings)
 
-    import asyncio
     with pytest.raises(AppError) as exc:
-        asyncio.get_event_loop().run_until_complete(
-            engine.generate_scorecard("nonexistent", "org-001")
-        )
+        asyncio.run(engine.generate_scorecard("nonexistent", "org-001"))
     assert exc.value.status_code == 404
 
 
-@mock_aws
-def test_generate_scorecard_wrong_org(dynamo_tables, mock_claude, sample_supplier):
+def test_generate_scorecard_wrong_org(dynamo_tables, mock_ai, sample_supplier):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
 
     settings = Settings()
-    engine = SupplierEngine(dynamo_tables, mock_claude, settings)
+    engine = SupplierEngine(dynamo_tables, mock_ai, settings)
 
-    import asyncio
     with pytest.raises(AppError) as exc:
-        asyncio.get_event_loop().run_until_complete(
-            engine.generate_scorecard("supplier-001", "wrong-org")
-        )
+        asyncio.run(engine.generate_scorecard("supplier-001", "wrong-org"))
     assert exc.value.status_code == 404

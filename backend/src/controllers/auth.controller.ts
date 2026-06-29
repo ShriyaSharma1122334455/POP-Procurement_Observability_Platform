@@ -6,6 +6,17 @@
 import type { Request, Response, NextFunction } from 'express'
 import { z, ZodError } from 'zod'
 import * as authService from '../services/auth.service.js'
+import type { UserItem } from '../db/types.js'
+
+function mapUser(user: Omit<UserItem, 'passwordHash'>) {
+  return {
+    id: user.userId,
+    name: user.name,
+    email: user.email,
+    role: user.role.toLowerCase() as string,
+    createdAt: user.createdAt,
+  }
+}
 
 // ── Input schemas (Zod) ───────────────────────────────────────────────────────
 
@@ -49,9 +60,12 @@ export async function registerHandler(
     const body = registerSchema.parse(req.body)
     const result = await authService.register(body)
     res.status(201).json({
-      message: 'User registered successfully',
-      accessToken: result.accessToken,
-      user: result.user,
+      success: true,
+      data: {
+        user: mapUser(result.user),
+        token: result.accessToken,
+        expiresIn: 28800,
+      },
     })
   } catch (err) {
     if (err instanceof ZodError) {
@@ -75,9 +89,12 @@ export async function loginHandler(
     const body = loginSchema.parse(req.body)
     const result = await authService.login(body)
     res.status(200).json({
-      message: 'Login successful',
-      accessToken: result.accessToken,
-      user: result.user,
+      success: true,
+      data: {
+        user: mapUser(result.user),
+        token: result.accessToken,
+        expiresIn: 28800,
+      },
     })
   } catch (err) {
     if (err instanceof ZodError) {
@@ -100,7 +117,7 @@ export async function profileHandler(
   try {
     // req.user is guaranteed by authenticate middleware
     const user = await authService.getProfile(req.user!.sub)
-    res.status(200).json({ user })
+    res.status(200).json({ success: true, data: mapUser(user) })
   } catch (err) {
     next(err)
   }

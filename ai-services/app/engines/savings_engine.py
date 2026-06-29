@@ -1,7 +1,7 @@
 """
 Y3 — Savings Agent Engine.
 Accepts a natural-language goal, fetches org spend data from DynamoDB,
-calls Claude to generate savings opportunities, and writes results to
+uses Gemini to generate savings opportunities, and writes results to
 pop-savings-recommendations. This is the only DynamoDB writer in the AI service.
 """
 
@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from app.clients.claude import ClaudeClient
+from app.clients.gemini import GeminiClient
 from app.config.settings import Settings
 from app.prompts import savings_prompts
 from app.repositories import savings_repo, supplier_repo
@@ -21,7 +21,7 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Category mapping from Claude output to DynamoDB enum
+# Category mapping from AI output to DynamoDB enum
 VALID_CATEGORIES = {
     "SUPPLIER_SWITCH",
     "VOLUME_DISCOUNT",
@@ -102,9 +102,9 @@ def _build_recommendation_item(opp: dict, organization_id: str) -> dict:
 
 
 class SavingsEngine:
-    def __init__(self, dynamo: Any, claude: ClaudeClient, settings: Settings) -> None:
+    def __init__(self, dynamo: Any, gemini: GeminiClient, settings: Settings) -> None:
         self._dynamo = dynamo
-        self._claude = claude
+        self._gemini = gemini
         self._settings = settings
 
     async def run_agent(self, prompt: str, organization_id: str) -> dict:
@@ -130,9 +130,9 @@ class SavingsEngine:
             len(orders),
         )
 
-        # 3. Call Claude
+        # 3. Call Gemini
         raw = await asyncio.to_thread(
-            self._claude.complete,
+            self._gemini.complete,
             savings_prompts.SYSTEM,
             savings_prompts.user_prompt(prompt, suppliers, orders, spend_summary),
             3000,

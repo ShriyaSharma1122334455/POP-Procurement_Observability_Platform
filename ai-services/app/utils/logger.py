@@ -7,7 +7,10 @@ Human-readable format in development (mirrors pino-pretty from the backend).
 import logging
 import os
 
-from pythonjsonlogger import jsonlogger
+try:
+    from pythonjsonlogger.json import JsonFormatter
+except ImportError:
+    from pythonjsonlogger.jsonlogger import JsonFormatter  # type: ignore[no-redef]
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -19,7 +22,7 @@ def get_logger(name: str) -> logging.Logger:
     handler = logging.StreamHandler()
 
     if os.getenv("ENVIRONMENT", "development") == "production":
-        formatter = jsonlogger.JsonFormatter(
+        formatter = JsonFormatter(
             "%(asctime)s %(name)s %(levelname)s %(message)s"
         )
         logger.setLevel(logging.INFO)

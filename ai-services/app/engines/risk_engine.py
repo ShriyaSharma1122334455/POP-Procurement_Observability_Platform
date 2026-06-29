@@ -1,7 +1,7 @@
 """
 Y4 — Risk Analysis Engine.
 Fetches an alert from DynamoDB, optionally loads the related supplier,
-calls Claude to produce a plain-English explanation and recommended actions.
+uses Gemini to produce a plain-English explanation and recommended actions.
 """
 
 import asyncio
@@ -10,7 +10,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from app.clients.claude import ClaudeClient
+from app.clients.gemini import GeminiClient
 from app.config.settings import Settings
 from app.prompts import risk_prompts
 from app.repositories import alert_repo, supplier_repo
@@ -34,9 +34,9 @@ def _parse_json_response(raw: str) -> dict:
 
 
 class RiskEngine:
-    def __init__(self, dynamo: Any, claude: ClaudeClient, settings: Settings) -> None:
+    def __init__(self, dynamo: Any, gemini: GeminiClient, settings: Settings) -> None:
         self._dynamo = dynamo
-        self._claude = claude
+        self._gemini = gemini
         self._settings = settings
 
     async def explain_alert(self, alert_id: str, organization_id: str) -> dict:
@@ -58,9 +58,9 @@ class RiskEngine:
 
         logger.debug("Explaining alert %s (type=%s)", alert_id, alert.get("type"))
 
-        # 3. Call Claude
+        # 3. Call Gemini
         raw = await asyncio.to_thread(
-            self._claude.complete,
+            self._gemini.complete,
             risk_prompts.SYSTEM,
             risk_prompts.user_prompt(alert, supplier),
         )

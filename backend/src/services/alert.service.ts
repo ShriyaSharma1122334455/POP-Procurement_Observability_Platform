@@ -106,21 +106,10 @@ export async function updateAlertStatus(
   organizationId: string,
   status: AlertStatus
 ): Promise<AlertItem | null> {
-  // Query to get the alert's sort key (createdAt) — required for UpdateCommand
-  const queryResult = await docClient.send(
-    new QueryCommand({
-      TableName: env.DYNAMODB_ALERTS_TABLE,
-      KeyConditionExpression: 'alertId = :id',
-      FilterExpression: 'organizationId = :orgId',
-      ExpressionAttributeValues: {
-        ':id': alertId,
-        ':orgId': organizationId,
-      },
-      Limit: 1,
-    })
-  )
-
-  const existing = queryResult.Items?.[0] as AlertItem | undefined
+  // Use the organizationId-createdAt-index GSI to find all alerts for the org,
+  // then filter by alertId to get the createdAt needed for the UpdateCommand key.
+  const allAlerts = await listAlerts(organizationId)
+  const existing = allAlerts.find((a) => a.alertId === alertId)
   if (!existing) return null
 
   const now = new Date().toISOString()

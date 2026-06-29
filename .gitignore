@@ -17,6 +17,18 @@ dist/
 # Uncomment the next line if you want to ignore the lock file too:
 # .terraform.lock.hcl
 
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+.mypy_cache/
+.ruff_cache/
+
 # ── OS / Editor ───────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

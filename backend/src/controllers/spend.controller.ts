@@ -65,7 +65,7 @@ export async function summaryHandler(
   try {
     const filter = buildFilter(req)
     const data = await spendService.getSpendSummary(filter)
-    res.json(data)
+    res.json({ success: true, data })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
@@ -88,7 +88,7 @@ export async function trendsHandler(
   try {
     const filter = buildFilter(req)
     const data = await spendService.getSpendTrends(filter)
-    res.json(data)
+    res.json({ success: true, data })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
@@ -111,7 +111,7 @@ export async function categoriesHandler(
   try {
     const filter = buildFilter(req)
     const data = await spendService.getSpendByCategories(filter)
-    res.json(data)
+    res.json({ success: true, data })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
@@ -135,7 +135,7 @@ export async function suppliersHandler(
     const filter = buildFilter(req)
     const { limit, offset } = paginationSchema.parse(req.query)
     const data = await spendService.getSpendBySuppliers(filter, { limit, offset })
-    res.json(data)
+    res.json({ success: true, data })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })

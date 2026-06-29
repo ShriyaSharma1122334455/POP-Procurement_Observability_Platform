@@ -38,7 +38,6 @@ def load_secrets(settings: Settings) -> None:
 
     client = boto3.client("secretsmanager", region_name=settings.AWS_REGION)
 
-    settings.ANTHROPIC_API_KEY = _get_secret_value(client, settings.ANTHROPIC_SECRET_NAME)
-    settings.OPENAI_API_KEY = _get_secret_value(client, settings.OPENAI_SECRET_NAME)
+    settings.GEMINI_API_KEY = _get_secret_value(client, settings.GEMINI_SECRET_NAME)
 
     logger.info("Secrets loaded from AWS Secrets Manager")

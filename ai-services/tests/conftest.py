@@ -15,8 +15,7 @@ from moto import mock_aws
 
 # Set env vars before any app imports
 os.environ.setdefault("ENVIRONMENT", "development")
-os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
-os.environ.setdefault("OPENAI_API_KEY", "test-key")
+os.environ.setdefault("GEMINI_API_KEY", "test-key")
 os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
 os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")
 os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "test")
@@ -168,8 +167,8 @@ def dynamo_tables(aws_credentials):
 
 
 @pytest.fixture
-def mock_claude():
-    """Claude client that returns controllable JSON responses."""
+def mock_ai():
+    """AI client that returns controllable JSON responses."""
     client = MagicMock()
     client.complete = MagicMock()
     return client

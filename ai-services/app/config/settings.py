@@ -4,7 +4,13 @@ Mirrors the pattern used in backend/src/config/env.ts.
 Throws at startup if required vars are missing.
 """
 
+from pathlib import Path
+
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load .env relative to this file so it works regardless of working directory
+load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
 
 class Settings(BaseSettings):
@@ -14,6 +20,8 @@ class Settings(BaseSettings):
 
     # AWS
     AWS_REGION: str = "us-east-1"
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
     DYNAMODB_ENDPOINT: str | None = None  # set for local DynamoDB
 
     # DynamoDB table names — defaults mirror backend/src/config/env.ts convention
@@ -23,12 +31,10 @@ class Settings(BaseSettings):
     DYNAMODB_SAVINGS_RECOMMENDATIONS_TABLE: str = "pop-dev-savings-recommendations"
 
     # Secrets Manager secret names (production only)
-    ANTHROPIC_SECRET_NAME: str = "pop/anthropic-api-key"
-    OPENAI_SECRET_NAME: str = "pop/openai-api-key"
+    GEMINI_SECRET_NAME: str = "pop/gemini-api-key"
 
     # API keys — set directly in dev; loaded from Secrets Manager in prod
-    ANTHROPIC_API_KEY: str = ""
-    OPENAI_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

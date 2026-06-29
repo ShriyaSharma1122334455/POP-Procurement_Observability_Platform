@@ -9,6 +9,8 @@ import {
   listAlertsHandler,
   createAlertHandler,
   explainAlertHandler,
+  acknowledgeAlertHandler,
+  resolveAlertHandler,
 } from '../controllers/alert.controller.js'
 
 const router = Router()
@@ -18,5 +20,7 @@ router.use(authenticate)
 router.get('/', listAlertsHandler)
 router.post('/', createAlertHandler)
 router.get('/:id/explain', explainAlertHandler)
+router.put('/:id/acknowledge', acknowledgeAlertHandler)
+router.put('/:id/resolve', resolveAlertHandler)
 
 export default router

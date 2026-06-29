@@ -7,7 +7,23 @@ import type { Request, Response, NextFunction } from 'express'
 import { z, ZodError } from 'zod'
 import * as alertService from '../services/alert.service.js'
 import * as aiService from '../services/ai.service.js'
-import type { AlertStatus, AlertSeverity, AlertType } from '../db/types.js'
+import type { AlertStatus, AlertSeverity, AlertType, AlertItem } from '../db/types.js'
+
+function mapAlert(a: AlertItem) {
+  return {
+    id: a.alertId,
+    // Normalize backend CONTRACT_EXPIRY to frontend CONTRACT_EXPIRATION
+    type: a.type === 'CONTRACT_EXPIRY' ? 'CONTRACT_EXPIRATION' : a.type,
+    severity: a.severity,
+    status: a.status,
+    title: a.title,
+    description: a.description,
+    estimatedImpact: a.estimatedImpact,
+    supplierId: a.affectedEntityId,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  }
+}
 
 const listAlertsQuerySchema = z.object({
   status: z
@@ -52,7 +68,17 @@ export async function listAlertsHandler(
       query.severity as AlertSeverity | undefined
     )
 
-    res.status(200).json({ alerts })
+    const mapped = alerts.map(mapAlert)
+    res.status(200).json({
+      success: true,
+      data: {
+        data: mapped,
+        total: mapped.length,
+        page: 1,
+        limit: mapped.length,
+        hasMore: false,
+      },
+    })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
@@ -78,10 +104,7 @@ export async function createAlertHandler(
       severity: body.severity as AlertSeverity,
     })
 
-    res.status(201).json({
-      message: 'Alert created successfully',
-      alert,
-    })
+    res.status(201).json({ success: true, data: mapAlert(alert) })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
@@ -105,7 +128,59 @@ export async function explainAlertHandler(
     const organizationId = req.user!.organizationId
 
     const explanation = await aiService.explainAlert(params.id, organizationId)
-    res.status(200).json({ explanation })
+    res.status(200).json({ success: true, data: explanation })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
+  }
+}
+
+const alertIdParamsSchema = z.object({
+  id: z.string().min(1, 'Alert ID is required'),
+})
+
+export async function acknowledgeAlertHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const params = alertIdParamsSchema.parse(req.params)
+    const organizationId = req.user!.organizationId
+
+    const alert = await alertService.updateAlertStatus(params.id, organizationId, 'ACKNOWLEDGED')
+    if (!alert) {
+      res.status(404).json({ error: 'Alert not found' })
+      return
+    }
+    res.status(200).json({ success: true, data: mapAlert(alert) })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
+  }
+}
+
+export async function resolveAlertHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const params = alertIdParamsSchema.parse(req.params)
+    const organizationId = req.user!.organizationId
+
+    const alert = await alertService.updateAlertStatus(params.id, organizationId, 'RESOLVED')
+    if (!alert) {
+      res.status(404).json({ error: 'Alert not found' })
+      return
+    }
+    res.status(200).json({ success: true, data: mapAlert(alert) })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })

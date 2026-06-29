@@ -208,7 +208,7 @@ Backend:
 AI Services:
 
 * Python FastAPI
-* OpenAI / Claude APIs
+* Google Gemini API
 
 Infrastructure:
 

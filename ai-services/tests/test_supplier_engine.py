@@ -26,15 +26,15 @@ SCORECARD_RESPONSE = json.dumps({
 })
 
 
-def test_generate_scorecard_success(dynamo_tables, mock_claude, sample_supplier, sample_orders):
+def test_generate_scorecard_success(dynamo_tables, mock_ai, sample_supplier, sample_orders):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
     for order in sample_orders:
         dynamo_tables.Table("pop-dev-purchase-orders").put_item(Item=order)
 
-    mock_claude.complete.return_value = SCORECARD_RESPONSE
+    mock_ai.complete.return_value = SCORECARD_RESPONSE
 
     settings = Settings()
-    engine = SupplierEngine(dynamo_tables, mock_claude, settings)
+    engine = SupplierEngine(dynamo_tables, mock_ai, settings)
 
     result = asyncio.run(engine.generate_scorecard("supplier-001", "org-001"))
 
@@ -42,23 +42,23 @@ def test_generate_scorecard_success(dynamo_tables, mock_claude, sample_supplier,
     assert result["recommendation"] == "RENEW"
     assert "generatedAt" in result
     assert result["spendContext"]["order_count"] == 5
-    mock_claude.complete.assert_called_once()
+    mock_ai.complete.assert_called_once()
 
 
-def test_generate_scorecard_not_found(dynamo_tables, mock_claude):
+def test_generate_scorecard_not_found(dynamo_tables, mock_ai):
     settings = Settings()
-    engine = SupplierEngine(dynamo_tables, mock_claude, settings)
+    engine = SupplierEngine(dynamo_tables, mock_ai, settings)
 
     with pytest.raises(AppError) as exc:
         asyncio.run(engine.generate_scorecard("nonexistent", "org-001"))
     assert exc.value.status_code == 404
 
 
-def test_generate_scorecard_wrong_org(dynamo_tables, mock_claude, sample_supplier):
+def test_generate_scorecard_wrong_org(dynamo_tables, mock_ai, sample_supplier):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
 
     settings = Settings()
-    engine = SupplierEngine(dynamo_tables, mock_claude, settings)
+    engine = SupplierEngine(dynamo_tables, mock_ai, settings)
 
     with pytest.raises(AppError) as exc:
         asyncio.run(engine.generate_scorecard("supplier-001", "wrong-org"))

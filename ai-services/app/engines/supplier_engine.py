@@ -1,6 +1,6 @@
 """
 Y2 — Supplier Intelligence Engine.
-Fetches supplier + recent POs from DynamoDB, calls Claude,
+Fetches supplier + recent POs from DynamoDB, calls Gemini,
 returns a structured scorecard with recommendation rationale.
 """
 
@@ -10,7 +10,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from app.clients.claude import ClaudeClient
+from app.clients.gemini import GeminiClient
 from app.config.settings import Settings
 from app.prompts import supplier_prompts
 from app.repositories import supplier_repo
@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 
 
 def _parse_json_response(raw: str) -> dict:
-    """Parse Claude's JSON output; handles prose wrapping the JSON block."""
+    """Parse AI JSON output; handles prose wrapping the JSON block."""
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
@@ -45,9 +45,9 @@ def _compute_spend_summary(orders: list[dict]) -> dict:
 
 
 class SupplierEngine:
-    def __init__(self, dynamo: Any, claude: ClaudeClient, settings: Settings) -> None:
+    def __init__(self, dynamo: Any, gemini: GeminiClient, settings: Settings) -> None:
         self._dynamo = dynamo
-        self._claude = claude
+        self._gemini = gemini
         self._settings = settings
 
     async def generate_scorecard(self, supplier_id: str, organization_id: str) -> dict:
@@ -69,9 +69,9 @@ class SupplierEngine:
             len(orders),
         )
 
-        # 3. Call Claude (offloaded to thread pool — SDK is synchronous)
+        # 3. Call Gemini (offloaded to thread pool — SDK is synchronous)
         raw = await asyncio.to_thread(
-            self._claude.complete,
+            self._gemini.complete,
             supplier_prompts.SYSTEM,
             supplier_prompts.user_prompt(supplier, orders),
         )

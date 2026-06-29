@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.clients.claude import ClaudeClient
+from app.clients.gemini import GeminiClient
 from app.clients.dynamo import get_dynamo_resource
 from app.config.secrets import load_secrets
 from app.config.settings import settings
@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 
     app.state.settings = settings
     app.state.dynamo = get_dynamo_resource(settings)
-    app.state.claude = ClaudeClient(settings.ANTHROPIC_API_KEY)
+    app.state.gemini = GeminiClient(settings.GEMINI_API_KEY)
 
     logger.info(
         "POP AI Services started | env=%s region=%s",

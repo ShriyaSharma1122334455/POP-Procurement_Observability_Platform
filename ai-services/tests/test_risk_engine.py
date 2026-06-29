@@ -23,14 +23,14 @@ RISK_RESPONSE = json.dumps({
 })
 
 
-def test_explain_alert_success(dynamo_tables, mock_claude, sample_alert, sample_supplier):
+def test_explain_alert_success(dynamo_tables, mock_ai, sample_alert, sample_supplier):
     dynamo_tables.Table("pop-dev-alerts").put_item(Item=sample_alert)
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
 
-    mock_claude.complete.return_value = RISK_RESPONSE
+    mock_ai.complete.return_value = RISK_RESPONSE
 
     settings = Settings()
-    engine = RiskEngine(dynamo_tables, mock_claude, settings)
+    engine = RiskEngine(dynamo_tables, mock_ai, settings)
 
     result = asyncio.run(engine.explain_alert("alert-001", "org-001"))
 
@@ -39,12 +39,12 @@ def test_explain_alert_success(dynamo_tables, mock_claude, sample_alert, sample_
     assert result["severity"] == "HIGH"
     assert len(result["recommended_actions"]) == 2
     assert "generatedAt" in result
-    mock_claude.complete.assert_called_once()
+    mock_ai.complete.assert_called_once()
 
 
-def test_explain_alert_not_found(dynamo_tables, mock_claude):
+def test_explain_alert_not_found(dynamo_tables, mock_ai):
     settings = Settings()
-    engine = RiskEngine(dynamo_tables, mock_claude, settings)
+    engine = RiskEngine(dynamo_tables, mock_ai, settings)
 
     with pytest.raises(AppError) as exc:
         asyncio.run(engine.explain_alert("nonexistent", "org-001"))

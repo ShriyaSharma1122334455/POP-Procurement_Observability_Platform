@@ -16,5 +16,6 @@ const router = Router()
 router.post('/register', registerHandler)
 router.post('/login', loginHandler)
 router.get('/profile', authenticate, profileHandler)
+router.get('/me', authenticate, profileHandler)
 
 export default router

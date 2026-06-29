@@ -28,15 +28,15 @@ SAVINGS_RESPONSE = json.dumps({
 })
 
 
-def test_run_agent_success(dynamo_tables, mock_claude, sample_supplier, sample_orders):
+def test_run_agent_success(dynamo_tables, mock_ai, sample_supplier, sample_orders):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
     for order in sample_orders:
         dynamo_tables.Table("pop-dev-purchase-orders").put_item(Item=order)
 
-    mock_claude.complete.return_value = SAVINGS_RESPONSE
+    mock_ai.complete.return_value = SAVINGS_RESPONSE
 
     settings = Settings()
-    engine = SavingsEngine(dynamo_tables, mock_claude, settings)
+    engine = SavingsEngine(dynamo_tables, mock_ai, settings)
 
     result = asyncio.run(engine.run_agent("reduce food cost by 5%", "org-001"))
 
@@ -51,11 +51,11 @@ def test_run_agent_success(dynamo_tables, mock_claude, sample_supplier, sample_o
     assert recs[0]["category"] == "VOLUME_DISCOUNT"
 
 
-def test_run_agent_no_orders_raises(dynamo_tables, mock_claude, sample_supplier):
+def test_run_agent_no_orders_raises(dynamo_tables, mock_ai, sample_supplier):
     dynamo_tables.Table("pop-dev-suppliers").put_item(Item=sample_supplier)
 
     settings = Settings()
-    engine = SavingsEngine(dynamo_tables, mock_claude, settings)
+    engine = SavingsEngine(dynamo_tables, mock_ai, settings)
 
     with pytest.raises(AppError) as exc:
         asyncio.run(engine.run_agent("reduce costs", "org-001"))

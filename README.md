@@ -69,8 +69,7 @@ The AI agent analyzes purchasing data and produces actionable recommendations.
 ### AI Layer
 
 * Python FastAPI
-* OpenAI API
-* Claude API
+* Google Gemini API
 
 ### Infrastructure
 
@@ -163,8 +162,10 @@ VITE_API_URL=
 AI Service
 
 ```env
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=us-east-2
 ```
 
 ---

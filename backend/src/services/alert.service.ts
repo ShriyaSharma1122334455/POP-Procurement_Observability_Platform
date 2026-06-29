@@ -3,7 +3,7 @@
  * Business logic for alert management.
  */
 
-import { QueryCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
+import { QueryCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import { randomUUID } from 'crypto'
 import { docClient } from '../config/dynamo.js'
 import { env } from '../config/env.js'
@@ -100,4 +100,41 @@ export async function createAlert(input: CreateAlertInput): Promise<AlertItem> {
   )
 
   return alertItem
+}
+
+export async function updateAlertStatus(
+  alertId: string,
+  organizationId: string,
+  status: AlertStatus
+): Promise<AlertItem | null> {
+  // Query to get the alert's sort key (createdAt) — required for UpdateCommand
+  const queryResult = await docClient.send(
+    new QueryCommand({
+      TableName: env.DYNAMODB_ALERTS_TABLE,
+      KeyConditionExpression: 'alertId = :id',
+      FilterExpression: 'organizationId = :orgId',
+      ExpressionAttributeValues: {
+        ':id': alertId,
+        ':orgId': organizationId,
+      },
+      Limit: 1,
+    })
+  )
+
+  const existing = queryResult.Items?.[0] as AlertItem | undefined
+  if (!existing) return null
+
+  const now = new Date().toISOString()
+
+  await docClient.send(
+    new UpdateCommand({
+      TableName: env.DYNAMODB_ALERTS_TABLE,
+      Key: { alertId: existing.alertId, createdAt: existing.createdAt },
+      UpdateExpression: 'SET #status = :status, updatedAt = :now',
+      ExpressionAttributeNames: { '#status': 'status' },
+      ExpressionAttributeValues: { ':status': status, ':now': now },
+    })
+  )
+
+  return { ...existing, status, updatedAt: now }
 }

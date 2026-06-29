@@ -73,9 +73,10 @@ export type AlertType =
   | 'CONTRACT_EXPIRATION'
   | 'SPEND_CONCENTRATION'
   | 'MARKET_ANOMALY'
+  | 'BUDGET_OVERRUN'
 
 export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-export type AlertStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED'
+export type AlertStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'DISMISSED'
 
 export interface Alert {
   id: string

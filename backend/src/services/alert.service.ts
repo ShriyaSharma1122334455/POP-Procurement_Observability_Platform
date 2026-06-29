@@ -21,35 +21,34 @@ export interface CreateAlertInput {
 export async function listAlerts(
   organizationId: string,
   status?: AlertStatus,
-  severity?: AlertSeverity
+  severity?: AlertSeverity,
+  type?: AlertType
 ): Promise<AlertItem[]> {
   const items: AlertItem[] = []
   let lastKey: Record<string, unknown> | undefined
 
-  // Build filter expression if status or severity are specified
-  let filterExpression: string | undefined
   const expressionAttributeValues: Record<string, unknown> = {
     ':orgId': organizationId,
   }
-
+  const expressionAttributeNames: Record<string, string> = {}
   const filters: string[] = []
+
   if (status) {
     filters.push('#status = :status')
     expressionAttributeValues[':status'] = status.toUpperCase()
+    expressionAttributeNames['#status'] = 'status'
   }
   if (severity) {
     filters.push('severity = :severity')
     expressionAttributeValues[':severity'] = severity.toUpperCase()
   }
-
-  if (filters.length > 0) {
-    filterExpression = filters.join(' AND ')
+  if (type) {
+    filters.push('#type = :type')
+    expressionAttributeValues[':type'] = type.toUpperCase()
+    expressionAttributeNames['#type'] = 'type'
   }
 
-  const expressionAttributeNames: Record<string, string> = {}
-  if (status) {
-    expressionAttributeNames['#status'] = 'status'
-  }
+  const filterExpression = filters.length > 0 ? filters.join(' AND ') : undefined
 
   do {
     const result = await docClient.send(
@@ -107,21 +106,10 @@ export async function updateAlertStatus(
   organizationId: string,
   status: AlertStatus
 ): Promise<AlertItem | null> {
-  // Query to get the alert's sort key (createdAt) — required for UpdateCommand
-  const queryResult = await docClient.send(
-    new QueryCommand({
-      TableName: env.DYNAMODB_ALERTS_TABLE,
-      KeyConditionExpression: 'alertId = :id',
-      FilterExpression: 'organizationId = :orgId',
-      ExpressionAttributeValues: {
-        ':id': alertId,
-        ':orgId': organizationId,
-      },
-      Limit: 1,
-    })
-  )
-
-  const existing = queryResult.Items?.[0] as AlertItem | undefined
+  // Use the organizationId-createdAt-index GSI to find all alerts for the org,
+  // then filter by alertId to get the createdAt needed for the UpdateCommand key.
+  const allAlerts = await listAlerts(organizationId)
+  const existing = allAlerts.find((a) => a.alertId === alertId)
   if (!existing) return null
 
   const now = new Date().toISOString()

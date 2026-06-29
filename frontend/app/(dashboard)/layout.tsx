@@ -17,7 +17,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   )
 
   useEffect(() => {
-    if (useAuthStore.persist.hasHydrated()) return
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsHydrated(true)
+      return
+    }
     const unsub = useAuthStore.persist.onFinishHydration(() => setIsHydrated(true))
     return () => unsub()
   }, [])

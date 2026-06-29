@@ -34,12 +34,22 @@ const paginationSchema = z.object({
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
+const PERIOD_DAYS: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 }
+
 function buildFilter(req: Request, extra?: Partial<DateRangeFilter>): DateRangeFilter {
   const parsed = dateRangeSchema.parse(req.query)
+  const today = new Date().toISOString().slice(0, 10)
+
+  let startDate = parsed.startDate
+  if (!startDate) {
+    const period = (req.query['period'] as string) ?? '30d'
+    const days = PERIOD_DAYS[period] ?? 30
+    startDate = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
+  }
+
   return {
-    startDate: parsed.startDate,
-    endDate: parsed.endDate,
-    // Scope to the authenticated user's org; admins can override via query param
+    startDate,
+    endDate: parsed.endDate ?? today,
     organizationId:
       (req.query['organizationId'] as string | undefined) ??
       req.user?.organizationId,

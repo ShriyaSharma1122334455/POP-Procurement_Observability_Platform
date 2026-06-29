@@ -55,7 +55,7 @@ const unixEpochDaysFromNow = (n: number) =>
 
 // ─── Sample Data ──────────────────────────────────────────────────────────────
 
-const ORG_ID = 'org-acme-restaurants';
+const ORG_ID = 'default';
 
 /** 1. Users */
 const users: UserItem[] = [

@@ -73,6 +73,17 @@ def _aggregate_spend(orders: list[dict]) -> dict:
     }
 
 
+def _parse_money(value) -> int:
+    """Parse a savings value that may be an int, float, or string like '$50,000'."""
+    if isinstance(value, (int, float)):
+        return max(0, int(value))
+    try:
+        cleaned = str(value).replace("$", "").replace(",", "").strip()
+        return max(0, int(float(cleaned)))
+    except (ValueError, TypeError):
+        return 0
+
+
 def _build_recommendation_item(opp: dict, organization_id: str) -> dict:
     """
     Construct a DynamoDB item matching SavingsRecommendationItem from backend/src/db/types.ts.
@@ -90,7 +101,7 @@ def _build_recommendation_item(opp: dict, organization_id: str) -> dict:
         "description": opp.get("description", ""),
         "category": category,
         "status": "PENDING",
-        "estimatedAnnualSavings": int(opp.get("estimated_annual_savings", 0)),
+        "estimatedAnnualSavings": _parse_money(opp.get("estimated_annual_savings", 0)),
         "confidenceScore": min(100, max(0, int(opp.get("confidence_score", 50)))),
         "currency": "USD",
         "affectedSupplierIds": opp.get("affected_supplier_ids", []),

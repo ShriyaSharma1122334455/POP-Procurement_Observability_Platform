@@ -38,8 +38,8 @@ Generate 3-5 concrete savings opportunities. Return a JSON object with this exac
       "title": "<short actionable title>",
       "description": "<2-3 sentence explanation>",
       "category": "<SUPPLIER_SWITCH | VOLUME_DISCOUNT | CONSOLIDATION | CONTRACT_RENEGOTIATION | DEMAND_REDUCTION | PROCESS_OPTIMIZATION>",
-      "estimated_annual_savings": <number in USD>,
-      "confidence_score": <0-100>,
+      "estimated_annual_savings": <integer USD amount e.g. 50000 — NO dollar sign, NO commas, must be greater than 0>,
+      "confidence_score": <integer 0-100>,
       "affected_supplier_ids": ["<supplierId>"],
       "affected_categories": ["<category>"],
       "implementation_steps": ["<step1>", "<step2>"]
@@ -47,4 +47,6 @@ Generate 3-5 concrete savings opportunities. Return a JSON object with this exac
   ],
   "analysis_summary": "<paragraph summarising key findings>",
   "prompt_version": "{PROMPT_VERSION}"
-}}"""
+}}
+
+IMPORTANT: estimated_annual_savings MUST be a realistic non-zero integer based on the spend data above. Example: if a supplier has $500,000 in spend and you expect 10% savings, set estimated_annual_savings to 50000."""

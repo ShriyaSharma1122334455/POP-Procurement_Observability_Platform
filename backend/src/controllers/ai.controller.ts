@@ -16,19 +16,25 @@ function formatZodError(err: ZodError) {
 }
 
 // Transform AI service response → frontend AgentResponse shape
-function transformSavingsResponse(prompt: string, raw: Record<string, unknown>) {
+function transformSavingsResponse(prompt: string, raw: Record<string, unknown>, processingTime = 0) {
   const recommendations = (raw['recommendations'] as Record<string, unknown>[] | undefined) ?? []
-  const opportunities = recommendations.map((r, i) => ({
-    id: String(i + 1),
-    title: String(r['title'] ?? ''),
-    description: String(r['description'] ?? ''),
-    estimatedSavings: Number(r['estimated_monthly_savings'] ?? 0),
-    annualizedSavings: Number(r['estimated_annual_savings'] ?? 0),
-    category: String(r['category'] ?? ''),
-    confidence: String(r['confidence_level'] ?? 'MEDIUM').toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH',
-    recommendedAction: String(r['recommended_action'] ?? ''),
-    affectedSuppliers: (r['affected_supplier_ids'] as string[] | undefined) ?? [],
-  }))
+  const opportunities = recommendations.map((r, i) => {
+    const annualSavings = Number(r['estimatedAnnualSavings'] ?? 0)
+    const confidenceScore = Number(r['confidenceScore'] ?? 50)
+    const confidence: 'LOW' | 'MEDIUM' | 'HIGH' =
+      confidenceScore >= 70 ? 'HIGH' : confidenceScore >= 40 ? 'MEDIUM' : 'LOW'
+    return {
+      id: String(r['recommendationId'] ?? i + 1),
+      title: String(r['title'] ?? ''),
+      description: String(r['description'] ?? ''),
+      estimatedSavings: Math.round(annualSavings / 12),
+      annualizedSavings: annualSavings,
+      category: String(r['category'] ?? ''),
+      confidence,
+      recommendedAction: String(r['description'] ?? ''),
+      affectedSuppliers: (r['affectedSupplierIds'] as string[] | undefined) ?? [],
+    }
+  })
 
   const totalPotentialSavings = opportunities.reduce((sum, o) => sum + o.annualizedSavings, 0)
 
@@ -43,7 +49,7 @@ function transformSavingsResponse(prompt: string, raw: Record<string, unknown>) 
       'Benchmarked supplier pricing against market data',
       'Calculated net savings after estimated switching costs',
     ],
-    processingTime: 0,
+    processingTime,
   }
 }
 
@@ -56,8 +62,10 @@ export async function savingsAgentHandler(
     const body = savingsAgentBodySchema.parse(req.body)
     const organizationId = req.user!.organizationId
 
+    const t0 = Date.now()
     const raw = await aiService.runSavingsAgent(body.prompt, organizationId) as Record<string, unknown>
-    const result = transformSavingsResponse(body.prompt, raw)
+    const processingTime = Number(((Date.now() - t0) / 1000).toFixed(1))
+    const result = transformSavingsResponse(body.prompt, raw, processingTime)
     res.status(200).json({ success: true, data: result })
   } catch (err) {
     if (err instanceof ZodError) {

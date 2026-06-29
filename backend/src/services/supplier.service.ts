@@ -10,7 +10,8 @@ import type { SupplierItem, SupplierCategory } from '../db/types.js'
 
 export async function listSuppliers(
   organizationId: string,
-  category?: SupplierCategory
+  category?: SupplierCategory,
+  search?: string
 ): Promise<SupplierItem[]> {
   const items: SupplierItem[] = []
   let lastKey: Record<string, unknown> | undefined
@@ -34,13 +35,18 @@ export async function listSuppliers(
     lastKey = result.LastEvaluatedKey as Record<string, unknown> | undefined
   } while (lastKey)
 
+  let result = items
   if (category) {
-    return items.filter(
-      (item) => item.category?.toUpperCase() === category.toUpperCase()
+    result = result.filter((s) => s.category?.toUpperCase() === category.toUpperCase())
+  }
+  if (search) {
+    const q = search.toLowerCase()
+    result = result.filter(
+      (s) => s.name?.toLowerCase().includes(q) || s.category?.toLowerCase().includes(q)
     )
   }
 
-  return items
+  return result
 }
 
 export async function getSupplierById(

@@ -21,35 +21,34 @@ export interface CreateAlertInput {
 export async function listAlerts(
   organizationId: string,
   status?: AlertStatus,
-  severity?: AlertSeverity
+  severity?: AlertSeverity,
+  type?: AlertType
 ): Promise<AlertItem[]> {
   const items: AlertItem[] = []
   let lastKey: Record<string, unknown> | undefined
 
-  // Build filter expression if status or severity are specified
-  let filterExpression: string | undefined
   const expressionAttributeValues: Record<string, unknown> = {
     ':orgId': organizationId,
   }
-
+  const expressionAttributeNames: Record<string, string> = {}
   const filters: string[] = []
+
   if (status) {
     filters.push('#status = :status')
     expressionAttributeValues[':status'] = status.toUpperCase()
+    expressionAttributeNames['#status'] = 'status'
   }
   if (severity) {
     filters.push('severity = :severity')
     expressionAttributeValues[':severity'] = severity.toUpperCase()
   }
-
-  if (filters.length > 0) {
-    filterExpression = filters.join(' AND ')
+  if (type) {
+    filters.push('#type = :type')
+    expressionAttributeValues[':type'] = type.toUpperCase()
+    expressionAttributeNames['#type'] = 'type'
   }
 
-  const expressionAttributeNames: Record<string, string> = {}
-  if (status) {
-    expressionAttributeNames['#status'] = 'status'
-  }
+  const filterExpression = filters.length > 0 ? filters.join(' AND ') : undefined
 
   do {
     const result = await docClient.send(

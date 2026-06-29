@@ -10,14 +10,18 @@ import * as aiService from '../services/ai.service.js'
 import type { AlertStatus, AlertSeverity, AlertType, AlertItem } from '../db/types.js'
 
 function mapAlert(a: AlertItem) {
+  // Normalize type differences between DB schema and frontend
+  let type: string = a.type
+  if (type === 'CONTRACT_EXPIRY') type = 'CONTRACT_EXPIRATION'
+
   return {
     id: a.alertId,
-    // Normalize backend CONTRACT_EXPIRY to frontend CONTRACT_EXPIRATION
-    type: a.type === 'CONTRACT_EXPIRY' ? 'CONTRACT_EXPIRATION' : a.type,
+    type,
     severity: a.severity,
     status: a.status,
     title: a.title,
     description: a.description,
+    recommendation: a.description,
     estimatedImpact: a.estimatedImpact,
     supplierId: a.affectedEntityId,
     createdAt: a.createdAt,
@@ -32,6 +36,11 @@ const listAlertsQuerySchema = z.object({
   severity: z
     .enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
     .optional(),
+  type: z
+    .enum(['PRICE_SPIKE', 'SUPPLIER_RISK', 'CONTRACT_EXPIRY', 'CONTRACT_EXPIRATION', 'SPEND_CONCENTRATION', 'MARKET_ANOMALY', 'BUDGET_OVERRUN'])
+    .optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
 })
 
 const createAlertBodySchema = z.object({
@@ -62,10 +71,14 @@ export async function listAlertsHandler(
     const query = listAlertsQuerySchema.parse(req.query)
     const organizationId = req.user!.organizationId
 
+    // Normalize CONTRACT_EXPIRATION → CONTRACT_EXPIRY for DB query
+    const dbType = query.type === 'CONTRACT_EXPIRATION' ? 'CONTRACT_EXPIRY' : query.type
+
     const alerts = await alertService.listAlerts(
       organizationId,
       query.status as AlertStatus | undefined,
-      query.severity as AlertSeverity | undefined
+      query.severity as AlertSeverity | undefined,
+      dbType as AlertType | undefined
     )
 
     const mapped = alerts.map(mapAlert)

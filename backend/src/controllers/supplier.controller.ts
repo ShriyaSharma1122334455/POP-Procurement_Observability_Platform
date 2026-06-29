@@ -7,6 +7,7 @@ import type { Request, Response, NextFunction } from 'express'
 import { z, ZodError } from 'zod'
 import * as supplierService from '../services/supplier.service.js'
 import * as aiService from '../services/ai.service.js'
+import * as spendService from '../services/spend.service.js'
 import type { SupplierCategory, SupplierItem } from '../db/types.js'
 
 function mapSupplier(s: SupplierItem) {
@@ -36,6 +37,9 @@ const listSuppliersQuerySchema = z.object({
       'OTHER',
     ])
     .optional(),
+  search: z.string().optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
 })
 
 const getSupplierParamsSchema = z.object({
@@ -57,7 +61,8 @@ export async function listSuppliersHandler(
 
     const suppliers = await supplierService.listSuppliers(
       organizationId,
-      query.category as SupplierCategory | undefined
+      query.category as SupplierCategory | undefined,
+      query.search
     )
 
     const mapped = suppliers.map(mapSupplier)
@@ -133,13 +138,35 @@ export async function getSupplierSummaryHandler(
   }
 }
 
-// GET /api/suppliers/:id/spend — returns spend trend data for a supplier
+const PERIOD_DAYS: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 }
+
+// GET /api/suppliers/:id/spend — returns daily spend trend for a supplier
 export async function getSupplierSpendHandler(
-  _req: Request,
+  req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): Promise<void> {
-  // Spend-per-supplier aggregation not yet implemented; return empty array
-  // so the frontend falls back to its mock gracefully
-  res.status(200).json({ success: true, data: [] })
+  try {
+    const params = getSupplierParamsSchema.parse(req.params)
+    const organizationId = req.user!.organizationId
+    const period = (req.query['period'] as string) ?? '90d'
+    const days = PERIOD_DAYS[period] ?? 90
+    const endDate = new Date().toISOString().slice(0, 10)
+    const startDate = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
+
+    const trends = await spendService.getSpendTrends({
+      organizationId,
+      startDate,
+      endDate,
+      supplierId: params.id,
+    })
+
+    res.status(200).json({ success: true, data: trends })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
+  }
 }

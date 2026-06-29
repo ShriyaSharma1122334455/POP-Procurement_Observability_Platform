@@ -1,4 +1,4 @@
-import { TrendingUp, AlertOctagon, Calendar, PieChart, Activity } from 'lucide-react'
+import { TrendingUp, AlertOctagon, Calendar, PieChart, Activity, DollarSign } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { AlertType } from '@/types'
 
@@ -8,10 +8,13 @@ const typeConfig: Record<AlertType, { Icon: LucideIcon; label: string }> = {
   CONTRACT_EXPIRATION: { Icon: Calendar,     label: 'Contract Expiry' },
   SPEND_CONCENTRATION: { Icon: PieChart,     label: 'Spend Concentration' },
   MARKET_ANOMALY:      { Icon: Activity,     label: 'Market Anomaly' },
+  BUDGET_OVERRUN:      { Icon: DollarSign,   label: 'Budget Overrun' },
 }
 
+const fallback = { Icon: AlertOctagon, label: 'Alert' }
+
 export function AlertTypeBadge({ type }: { type: AlertType }) {
-  const { Icon, label } = typeConfig[type]
+  const { Icon, label } = typeConfig[type] ?? fallback
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
       <Icon className="h-3 w-3" />

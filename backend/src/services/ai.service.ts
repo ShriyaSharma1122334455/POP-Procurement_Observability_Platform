@@ -46,6 +46,18 @@ export async function runSavingsAgent(
   })
 }
 
+export async function extractSupplierFromDoc(
+  fileBuffer: Buffer,
+  mimeType: string
+): Promise<unknown> {
+  const file_base64 = fileBuffer.toString('base64')
+  return post('/ai/extract-supplier-doc', { file_base64, mime_type: mimeType })
+}
+
+export async function extractSupplierFromText(text: string): Promise<unknown> {
+  return post('/ai/extract-supplier-text', { text })
+}
+
 export async function explainAlert(
   alertId: string,
   organizationId: string

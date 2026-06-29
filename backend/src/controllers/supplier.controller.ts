@@ -10,6 +10,13 @@ import * as aiService from '../services/ai.service.js'
 import * as spendService from '../services/spend.service.js'
 import type { SupplierCategory, SupplierItem } from '../db/types.js'
 
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+])
+
 function mapSupplier(s: SupplierItem) {
   return {
     id: s.supplierId,
@@ -22,6 +29,49 @@ function mapSupplier(s: SupplierItem) {
     recommendation: s.recommendation,
     createdAt: s.createdAt,
     updatedAt: s.updatedAt,
+  }
+}
+
+const SUPPLIER_CATEGORIES = [
+  'FOOD_BEVERAGE',
+  'RAW_MATERIALS',
+  'LOGISTICS',
+  'TECHNOLOGY',
+  'PROFESSIONAL_SERVICES',
+  'UTILITIES',
+  'OTHER',
+] as const
+
+const createSupplierBodySchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  category: z.enum(SUPPLIER_CATEGORIES),
+  contactEmail: z.string().email('Invalid email address'),
+  contactPhone: z.string().optional(),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')),
+  country: z.string().max(100).optional(),
+  contractExpiry: z.string().optional(),
+})
+
+export async function createSupplierHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const body = createSupplierBodySchema.parse(req.body)
+    const organizationId = req.user!.organizationId
+    const supplier = await supplierService.createSupplier({
+      ...body,
+      website: body.website || undefined,
+      organizationId,
+    })
+    res.status(201).json({ success: true, data: mapSupplier(supplier) })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
   }
 }
 
@@ -129,6 +179,54 @@ export async function getSupplierSummaryHandler(
 
     const summary = await aiService.getSupplierSummary(params.id, organizationId)
     res.status(200).json({ success: true, data: summary })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
+  }
+}
+
+const extractDocBodySchema = z.object({
+  file_base64: z.string().min(1, 'file_base64 is required'),
+  mime_type: z.string().refine((v) => ALLOWED_MIME_TYPES.has(v), {
+    message: 'Only JPEG, PNG, and WebP files are supported',
+  }),
+})
+
+export async function extractSupplierDocHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { file_base64, mime_type } = extractDocBodySchema.parse(req.body)
+    const fileBuffer = Buffer.from(file_base64, 'base64')
+    const result = await aiService.extractSupplierFromDoc(fileBuffer, mime_type)
+    res.status(200).json({ success: true, data: result })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })
+      return
+    }
+    next(err)
+  }
+}
+
+const extractTextBodySchema = z.object({
+  text: z.string().min(1, 'text is required'),
+})
+
+export async function extractSupplierTextHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { text } = extractTextBodySchema.parse(req.body)
+    const result = await aiService.extractSupplierFromText(text)
+    res.status(200).json({ success: true, data: result })
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ error: 'Validation failed', details: formatZodError(err) })

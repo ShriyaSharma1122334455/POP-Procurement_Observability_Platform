@@ -3,10 +3,54 @@
  * Business logic for supplier management.
  */
 
-import { QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb'
+import { QueryCommand, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
+import { randomUUID } from 'crypto'
 import { docClient } from '../config/dynamo.js'
 import { env } from '../config/env.js'
 import type { SupplierItem, SupplierCategory } from '../db/types.js'
+
+export interface CreateSupplierInput {
+  name: string
+  category: SupplierCategory
+  contactEmail: string
+  contactPhone?: string
+  website?: string
+  country?: string
+  contractExpiry?: string
+  organizationId: string
+}
+
+export async function createSupplier(input: CreateSupplierInput): Promise<SupplierItem> {
+  const now = new Date().toISOString()
+  const item: SupplierItem = {
+    supplierId: randomUUID(),
+    name: input.name,
+    category: input.category,
+    contactEmail: input.contactEmail,
+    contactPhone: input.contactPhone,
+    website: input.website || undefined,
+    country: input.country ?? 'US',
+    contractExpiry: input.contractExpiry || undefined,
+    organizationId: input.organizationId,
+    reliabilityScore: 50,
+    competitivenessScore: 50,
+    riskScore: 50,
+    relationshipScore: 50,
+    recommendation: 'NEGOTIATE',
+    totalSpendYTD: 0,
+    currency: 'USD',
+    tags: [],
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  await docClient.send(new PutCommand({
+    TableName: env.DYNAMODB_SUPPLIERS_TABLE,
+    Item: item,
+  }))
+
+  return item
+}
 
 export async function listSuppliers(
   organizationId: string,

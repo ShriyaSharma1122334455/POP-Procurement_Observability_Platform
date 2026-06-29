@@ -92,7 +92,7 @@ export function SavingsAgentChat({ onQueryComplete, prefill, onPrefillUsed }: Sa
         <Sparkles className="h-5 w-5 text-white" />
         <div className="flex-1">
           <p className="text-sm font-semibold text-white">POP Savings Agent</p>
-          <p className="text-xs text-blue-200">Powered by Gemini</p>
+          <p className="text-xs text-blue-200">Powered by Llama 3.1</p>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />

@@ -211,7 +211,7 @@ export function SupplierProfile({ supplier, spendHistory, aiSummary }: SupplierP
 
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-xs text-slate-400">
-              {aiSummary ? 'Powered by Gemini · Live analysis' : 'Powered by Gemini · Analysis updated daily'}
+              {aiSummary ? 'Powered by Llama 3.1 · Live analysis' : 'Powered by Llama 3.1 · Analysis updated daily'}
             </p>
           </div>
         </div>

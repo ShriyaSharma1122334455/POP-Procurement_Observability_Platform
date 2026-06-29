@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { SupplierFilters } from '@/components/suppliers/SupplierFilters'
 import { SupplierGrid } from '@/components/suppliers/SupplierGrid'
 import { SupplierListSkeleton } from '@/components/suppliers/SupplierListSkeleton'
+import { AddSupplierSheet } from '@/components/suppliers/AddSupplierSheet'
 import type { PaginatedResponse } from '@/types'
 
 export default function SuppliersPage() {
@@ -53,6 +54,7 @@ export default function SuppliersPage() {
         title="Supplier Intelligence"
         description={`${total} supplier${total !== 1 ? 's' : ''} monitored by AI`}
       />
+      <AddSupplierSheet />
       <SupplierFilters
         search={search}
         category={category}

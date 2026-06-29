@@ -29,3 +29,25 @@ class GeminiClient:
             ),
         )
         return response.text
+
+    def complete_with_file(
+        self,
+        system: str,
+        user: str,
+        file_bytes: bytes,
+        mime_type: str,
+        max_tokens: int = 1024,
+    ) -> str:
+        """Multimodal call — sends a file (image or PDF) alongside the text prompt."""
+        response = self._client.models.generate_content(
+            model=self.MODEL,
+            contents=[
+                types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+                types.Part.from_text(text=user),
+            ],
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                max_output_tokens=max_tokens,
+            ),
+        )
+        return response.text

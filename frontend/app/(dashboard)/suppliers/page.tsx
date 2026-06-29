@@ -39,8 +39,11 @@ export default function SuppliersPage() {
     },
   })
 
-  const suppliers = data?.data ?? []
-  const total = data?.total ?? 0
+  const rawSuppliers = data?.data ?? []
+  const suppliers = recommendation
+    ? rawSuppliers.filter((s) => s.recommendation === recommendation)
+    : rawSuppliers
+  const total = recommendation ? suppliers.length : (data?.total ?? 0)
 
   if (isPending) return <SupplierListSkeleton />
 

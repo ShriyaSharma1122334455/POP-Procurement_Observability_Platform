@@ -4,15 +4,17 @@ import {
   CheckCircle2, MessageSquare, GitBranch, AlertOctagon,
   Sparkles, type LucideIcon,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatCategory } from '@/lib/utils'
 import { ScoreGauge } from './ScoreGauge'
 import { RecommendationBadge } from './RecommendationBadge'
 import { SupplierSpendChart } from './SupplierSpendChart'
 import type { Supplier, SpendTrend, SupplierRecommendation } from '@/types'
+import type { SupplierSummary } from '@/lib/api/suppliers'
 
 interface SupplierProfileProps {
   supplier: Supplier
   spendHistory: SpendTrend[]
+  aiSummary: SupplierSummary | null
 }
 
 function getInitials(name: string): string {
@@ -65,29 +67,32 @@ const DOT_CLASSES: Record<InsightDot, string> = {
   red:   'bg-red-500',
 }
 
-function buildInsights(s: Supplier): Insight[] {
+function buildInsightsFromAI(summary: SupplierSummary): Insight[] {
   const insights: Insight[] = []
+  for (const risk of summary.key_risks.slice(0, 2)) {
+    insights.push({ text: risk, dot: 'red' })
+  }
+  for (const opp of summary.opportunities.slice(0, 3 - insights.length)) {
+    insights.push({ text: opp, dot: 'green' })
+  }
+  return insights.slice(0, 3)
+}
 
+function buildInsightsFallback(s: Supplier): Insight[] {
+  const insights: Insight[] = []
   if (s.reliabilityScore > 85) {
     insights.push({ text: `Strong delivery performance — ${s.reliabilityScore}% on-time rate over 90 days`, dot: 'green' })
   }
-
   if (s.competitivenessScore < 80) {
     insights.push({ text: `Pricing is approximately ${100 - s.competitivenessScore}% above market benchmarks`, dot: 'amber' })
-  } else if (s.reliabilityScore <= 85) {
+  } else {
     insights.push({ text: 'Pricing is competitive relative to market benchmarks', dot: 'green' })
   }
-
   if (s.riskScore > 60) {
     insights.push({ text: 'High concentration risk detected — consider alternative suppliers', dot: 'red' })
-  } else if (s.riskScore <= 40) {
+  } else {
     insights.push({ text: 'Supply chain risk is well-controlled at current levels', dot: 'green' })
   }
-
-  if (s.relationshipScore >= 80) {
-    insights.push({ text: 'Long-term partnership value is high — prioritize retention', dot: 'green' })
-  }
-
   return insights.slice(0, 3)
 }
 
@@ -131,8 +136,8 @@ const REC_CONFIG: Record<SupplierRecommendation, RecConfig> = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function SupplierProfile({ supplier, spendHistory }: SupplierProfileProps) {
-  const insights = buildInsights(supplier)
+export function SupplierProfile({ supplier, spendHistory, aiSummary }: SupplierProfileProps) {
+  const insights = aiSummary ? buildInsightsFromAI(aiSummary) : buildInsightsFallback(supplier)
   const rec = REC_CONFIG[supplier.recommendation]
   const RecIcon = rec.Icon
 
@@ -149,27 +154,11 @@ export function SupplierProfile({ supplier, spendHistory }: SupplierProfileProps
               <h1 className="text-2xl font-bold text-slate-900 leading-tight">{supplier.name}</h1>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                  {supplier.category}
+                  {formatCategory(supplier.category)}
                 </span>
                 <RecommendationBadge recommendation={supplier.recommendation} size="md" />
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => window.alert('Coming in Phase 2')}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              Export Report
-            </button>
-            <button
-              type="button"
-              onClick={() => window.alert('Coming in Phase 2')}
-              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-            >
-              Set Alert
-            </button>
           </div>
         </div>
       </div>
@@ -203,6 +192,11 @@ export function SupplierProfile({ supplier, spendHistory }: SupplierProfileProps
             <h3 className="text-base font-semibold text-slate-900">AI Intelligence</h3>
           </div>
 
+          {aiSummary?.scorecard_summary && (
+            <p className="text-sm text-slate-600 leading-snug mb-3 pb-3 border-b border-slate-100">
+              {aiSummary.scorecard_summary}
+            </p>
+          )}
           <ul className="space-y-3 flex-1">
             {insights.map((insight, i) => (
               <li key={i} className="flex items-start gap-2.5">
@@ -216,7 +210,9 @@ export function SupplierProfile({ supplier, spendHistory }: SupplierProfileProps
           </ul>
 
           <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-400">Powered by Claude AI · Analysis updated daily</p>
+            <p className="text-xs text-slate-400">
+              {aiSummary ? 'Powered by Gemini · Live analysis' : 'Powered by Gemini · Analysis updated daily'}
+            </p>
           </div>
         </div>
       </div>
@@ -231,13 +227,6 @@ export function SupplierProfile({ supplier, spendHistory }: SupplierProfileProps
               <p className="text-sm text-slate-600 mt-1 max-w-prose">{rec.description}</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => window.alert('Coming in Phase 2')}
-            className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            Take Action
-          </button>
         </div>
       </div>
     </div>

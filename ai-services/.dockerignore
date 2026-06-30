@@ -1,9 +1,6 @@
-__pycache__/
+.env
+__pycache__
 *.pyc
 *.pyo
-.env
-.env.*
+.pytest_cache
 tests/
-.pytest_cache/
-*.egg-info/
-.git/
